@@ -26,7 +26,6 @@ import {
   Facebook,
   Linkedin,
   Youtube,
-  Video,
   Layers,
   Zap,
 } from "lucide-react";
@@ -132,18 +131,6 @@ export default function Home() {
       name: "YouTube",
       icon: Youtube,
       description: "Schedule video uploads, shorts, and community channel announcements.",
-      status: "Available in Stage 3",
-    },
-    {
-      name: "TikTok",
-      icon: Video,
-      description: "Auto-publish short-form video content directly to your TikTok account.",
-      status: "Available in Stage 3",
-    },
-    {
-      name: "Pinterest",
-      icon: ImageIcon,
-      description: "Schedule pins, boards, and visual graphics for targeted organic traffic.",
       status: "Available in Stage 3",
     },
   ];
