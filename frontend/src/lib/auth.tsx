@@ -174,14 +174,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteWorkspace = async (workspaceId: string) => {
     await api.delete(`/workspaces/${workspaceId}`);
-    const remaining = workspaces.filter((w) => w.id !== workspaceId);
-    setWorkspaces(remaining);
+    try {
+      const wsListRes = await api.get<Workspace[]>("/workspaces");
+      const updatedWorkspaces = wsListRes.data;
+      setWorkspaces(updatedWorkspaces);
 
-    if (workspace?.id === workspaceId) {
-      if (remaining.length > 0) {
-        setWorkspace(remaining[0]);
-      } else {
-        setWorkspace(null);
+      if (workspace?.id === workspaceId) {
+        if (updatedWorkspaces.length > 0) {
+          const currentRes = await api.get<Workspace>(`/workspaces/current?workspace_id=${updatedWorkspaces[0].id}`);
+          setWorkspace(currentRes.data);
+        } else {
+          setWorkspace(null);
+        }
+      }
+    } catch (e) {
+      const remaining = workspaces.filter((w) => w.id !== workspaceId);
+      setWorkspaces(remaining);
+      if (workspace?.id === workspaceId) {
+        setWorkspace(remaining.length > 0 ? remaining[0] : null);
       }
     }
   };
