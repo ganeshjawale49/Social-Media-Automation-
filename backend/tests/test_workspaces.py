@@ -163,3 +163,51 @@ def test_delete_workspace_unauthorized_user(client):
     del_res = client.delete(f"/api/v1/workspaces/{u1_ws['id']}", headers=u2_headers)
     assert del_res.status_code == 403
 
+
+def test_delete_workspace_non_existent(client):
+    reg_res = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "non_existent_ws_tester@example.com",
+            "password": "Password123!",
+            "full_name": "Tester"
+        }
+    ).json()
+    headers = {"Authorization": f"Bearer {reg_res['access_token']}"}
+
+    import uuid
+    random_id = str(uuid.uuid4())
+    del_res = client.delete(f"/api/v1/workspaces/{random_id}", headers=headers)
+    assert del_res.status_code == 404
+    assert del_res.json()["detail"] == "Workspace not found"
+
+
+def test_delete_workspace_membership_cleanup(client):
+    reg_res = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "cleanup_ws_owner@example.com",
+            "password": "Password123!",
+            "full_name": "Cleanup Owner"
+        }
+    ).json()
+    headers = {"Authorization": f"Bearer {reg_res['access_token']}"}
+
+    # Fetch initial workspace created during registration
+    initial_ws = client.get("/api/v1/workspaces/current", headers=headers).json()
+    ws_id = initial_ws["id"]
+
+    # Delete the workspace
+    del_res = client.delete(f"/api/v1/workspaces/{ws_id}", headers=headers)
+    assert del_res.status_code == 204
+
+    # Fetch workspaces list - should be empty now
+    list_res = client.get("/api/v1/workspaces", headers=headers)
+    assert list_res.status_code == 200
+    assert len(list_res.json()) == 0
+
+    # Fetch current workspace - should return 404
+    current_res = client.get("/api/v1/workspaces/current", headers=headers)
+    assert current_res.status_code == 404
+
+

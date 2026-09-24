@@ -20,10 +20,10 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neural-aurora">
+    <div className="min-h-screen flex items-center justify-center bg-[#050505]">
       <div className="text-center space-y-4">
         <Spinner size="lg" />
-        <p className="text-sm text-slate-400">Loading application...</p>
+        <p className="text-sm text-neutral-400">Loading application...</p>
       </div>
     </div>
   );

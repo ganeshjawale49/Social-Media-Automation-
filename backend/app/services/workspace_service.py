@@ -94,6 +94,13 @@ class WorkspaceService:
 
     @staticmethod
     def delete_workspace(db: Session, user_id: UUID, workspace_id: UUID) -> None:
+        workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+        if not workspace:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workspace not found"
+            )
+
         member = (
             db.query(WorkspaceMember)
             .filter(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == user_id)
@@ -105,7 +112,7 @@ class WorkspaceService:
                 detail="Insufficient permissions to delete this workspace"
             )
         
-        workspace = member.workspace
         db.delete(workspace)
         db.commit()
+
 
