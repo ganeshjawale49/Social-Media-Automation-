@@ -65,9 +65,9 @@ class AuthService:
         return db_user, token
 
     @staticmethod
-    def authenticate_user(db: Session, user_in: UserLogin) -> tuple[User, str]:
-        user = db.query(User).filter(User.email == user_in.email.lower()).first()
-        if not user or not verify_password(user_in.password, user.password_hash):
+    def authenticate_credentials(db: Session, email_or_username: str, password: str) -> tuple[User, str]:
+        user = db.query(User).filter(User.email == email_or_username.lower()).first()
+        if not user or not verify_password(password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
@@ -81,3 +81,7 @@ class AuthService:
         
         token = create_access_token(subject=str(user.id))
         return user, token
+
+    @staticmethod
+    def authenticate_user(db: Session, user_in: UserLogin) -> tuple[User, str]:
+        return AuthService.authenticate_credentials(db, user_in.email, user_in.password)

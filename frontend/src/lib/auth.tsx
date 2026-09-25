@@ -76,7 +76,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (data: any) => {
     setLoading(true);
     try {
-      const res = await api.post<AuthResponse>("/auth/login", data);
+      const params = new URLSearchParams();
+      const emailOrUsername = data.email || data.username || "";
+      params.append("username", emailOrUsername);
+      params.append("password", data.password || "");
+
+      const res = await api.post<AuthResponse>("/auth/login", params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
       if (typeof window !== "undefined") {
         localStorage.setItem("token", res.data.access_token);
       }
@@ -96,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
+
 
   const register = async (data: any) => {
     setLoading(true);

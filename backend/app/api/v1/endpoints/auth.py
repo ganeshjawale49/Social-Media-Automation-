@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.schemas.user import UserRegister, UserLogin, UserResponse
+from app.schemas.user import UserRegister, UserResponse
 from app.schemas.token import Token
 from app.services.auth_service import AuthService
 from app.models.user import User
@@ -20,11 +22,40 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(user_in: UserLogin, db: Session = Depends(get_db)):
+async def login(
+    request: Request,
+    db: Session = Depends(get_db)
+):
     """
-    Authenticate user with email and password and return access token.
+    Authenticate user with OAuth2 Form-data (username & password) or JSON payload and return access token.
     """
-    user, token = AuthService.authenticate_user(db, user_in)
+    username = None
+    password = None
+
+    content_type = request.headers.get("content-type", "").lower()
+    if "application/json" in content_type:
+        try:
+            json_body = await request.json()
+            if isinstance(json_body, dict):
+                username = json_body.get("email") or json_body.get("username")
+                password = json_body.get("password")
+        except Exception:
+            pass
+    else:
+        try:
+            form_data = await request.form()
+            username = form_data.get("username") or form_data.get("email")
+            password = form_data.get("password")
+        except Exception:
+            pass
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Email/username and password are required",
+        )
+
+    user, token = AuthService.authenticate_credentials(db, str(username), str(password))
     return Token(access_token=token, token_type="bearer", user=user)
 
 
