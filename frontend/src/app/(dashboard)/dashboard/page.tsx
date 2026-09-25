@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { brandProfileApi } from "@/lib/brand-profile";
+import { BrandProfile } from "@/types";
 import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Card } from "@/components/ui/card";
@@ -28,11 +31,17 @@ import {
   Sparkles,
   Zap,
   FolderPlus,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, workspace, workspaces, loading, updateWorkspace, switchWorkspace } = useAuth();
   const router = useRouter();
+
+  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -51,6 +60,22 @@ export default function DashboardPage() {
       setWsDesc(workspace.description || "");
     }
   }, [user, workspace, loading, router]);
+
+  useEffect(() => {
+    const fetchBrandProfileStatus = async () => {
+      if (!workspace?.id) return;
+      setProfileLoading(true);
+      try {
+        const res = await brandProfileApi.getProfile(workspace.id);
+        setBrandProfile(res);
+      } catch (err) {
+        setBrandProfile(null);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    fetchBrandProfileStatus();
+  }, [workspace?.id]);
 
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +125,7 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
-                  SocialAutomate Stage 1 Foundation layer is provisioned and active. Manage your workspace and credentials below.
+                  SocialAutomate Stage 2 is active. Configure your workspace brand identity and initialize your AI Brand Brain context below.
                 </p>
               </div>
 
@@ -116,6 +141,51 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* STAGE 2: Brand Profile Status Card */}
+          {workspace && (
+            <Card className="p-6 bg-[#0d0d0d] border border-[#242424] flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+                  brandProfile
+                    ? "bg-emerald-950/60 border-emerald-800/80 text-emerald-400"
+                    : "bg-amber-950/60 border-amber-800/80 text-amber-400"
+                }`}>
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-base font-bold text-white">Brand Profile</h3>
+                    {profileLoading ? (
+                      <Spinner size="sm" />
+                    ) : brandProfile ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Complete
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-950/80 text-amber-400 border border-amber-800">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Setup required
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-relaxed max-w-xl">
+                    {brandProfile
+                      ? `Brand profile set up for "${brandProfile.brand_name}". AI Brand Brain context is normalized and ready.`
+                      : "No brand profile found for this workspace. Set up your brand identity to enable AI Brand Brain context."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <Link href="/brand-profile">
+                  <Button variant={brandProfile ? "secondary" : "primary"} size="md" className="gap-2">
+                    <span>{brandProfile ? "View / Edit Profile" : "Setup Brand Profile"}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
 
           {/* Active Workspace Details Section */}
           {workspace ? (
@@ -307,7 +377,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Future Stage 2+ Modules Roadmap Overview */}
+          {/* Future Stage 3+ Modules Roadmap Overview */}
           <div className="space-y-4 pt-4">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -315,7 +385,7 @@ export default function DashboardPage() {
                 Platform Roadmap & Placeholder Modules
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Stage 1 foundation established. Advanced AI modules will unlock in future stages.
+                Stage 2 Brand Identity established. Social integrations & AI content generation will unlock in Stage 3+.
               </p>
             </div>
 
@@ -326,7 +396,7 @@ export default function DashboardPage() {
                     <PenTool className="w-4 h-4" />
                   </div>
                   <Badge variant="gray" className="text-[10px] font-medium">
-                    Stage 2+
+                    Stage 3+
                   </Badge>
                 </div>
                 <div>
@@ -343,7 +413,7 @@ export default function DashboardPage() {
                     <Send className="w-4 h-4" />
                   </div>
                   <Badge variant="gray" className="text-[10px] font-medium">
-                    Stage 2+
+                    Stage 3+
                   </Badge>
                 </div>
                 <div>
@@ -359,14 +429,14 @@ export default function DashboardPage() {
                   <div className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400">
                     <BrainCircuit className="w-4 h-4" />
                   </div>
-                  <Badge variant="gray" className="text-[10px] font-medium">
-                    Stage 2+
+                  <Badge variant="green" className="text-[10px] font-medium">
+                    Stage 2 Ready
                   </Badge>
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">AI Brand Brain</h3>
                   <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                    Brand voice fine-tuning and AI prompt orchestration.
+                    Normalized brand context layer active for future AI prompt orchestration.
                   </p>
                 </div>
               </Card>
@@ -377,7 +447,7 @@ export default function DashboardPage() {
                     <BarChart3 className="w-4 h-4" />
                   </div>
                   <Badge variant="gray" className="text-[10px] font-medium">
-                    Stage 2+
+                    Stage 3+
                   </Badge>
                 </div>
                 <div>
