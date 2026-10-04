@@ -61,5 +61,41 @@ export interface AuthResponse {
 }
 
 export interface ApiError {
-  detail: string;
+  detail: string | { message?: string; required_env_vars?: string[] };
 }
+
+export interface SocialConnection {
+  id: string;
+  workspace_id: string;
+  provider: 'instagram' | 'linkedin' | 'x';
+  provider_account_id?: string | null;
+  account_name?: string | null;
+  username?: string | null;
+  expires_at?: string | null;
+  scopes?: string | null;
+  status: 'connected' | 'expired' | 'error' | 'disconnected';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SocialConnectionStatusItem {
+  provider: 'instagram' | 'linkedin' | 'x';
+  is_connected: boolean;
+  is_configured: boolean;
+  connection?: SocialConnection | null;
+  required_env_vars: string[];
+}
+
+export interface SocialConnectionListResponse {
+  workspace_id: string;
+  connections: SocialConnectionStatusItem[];
+}
+
+export interface ConnectUrlResponse {
+  authorization_url: string;
+  state: string;
+  provider: string;
+  is_configured: boolean;
+}
+
+

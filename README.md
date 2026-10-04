@@ -1,180 +1,142 @@
-# AI Social Media Automation Platform - STAGE 1
+# AI Social Media Automation Platform - STAGE 3
 
-Stage 1 Foundation layer providing Authentication, User Management, PostgreSQL Database ORM with Alembic Migrations, Multi-Workspace Management, Password Visibility Toggles, Workspace Deletion, and a Premium Minimal Dark Next.js / Tailwind CSS SaaS UI.
-
----
-
-## Features Implemented (Stage 1 Core)
-
-- **Authentication & User Management**:
-  - Secure user registration (`POST /api/v1/auth/register`) with automatic default workspace provisioning.
-  - User login (`POST /api/v1/auth/login`) returning JWT bearer token.
-  - User profile & session validation (`GET /api/v1/auth/me`).
-  - Session logout (`POST /api/v1/auth/logout`) with client token cleanup.
-  - Direct `bcrypt` password hashing and PyJWT token generation.
-  - **Password Visibility Toggle**: Interactive Eye / EyeOff toggle inside password fields on both Login and Register pages.
-
-- **Workspace Management**:
-  - Auto-provisioning of owner's workspace upon registration.
-  - Create custom workspaces with unique slugs (`POST /api/v1/workspaces`).
-  - Active workspace resolution & switching (`GET /api/v1/workspaces/current`).
-  - List user workspaces (`GET /api/v1/workspaces`).
-  - Update workspace name & description (`PATCH /api/v1/workspaces/{id}`).
-  - **Delete Workspace**: Complete workspace deletion (`DELETE /api/v1/workspaces/{id}`) with permission checks (Owner/Admin required), danger confirmation modal, cascading removal of workspace members, and automatic workspace switching fallback.
-
-- **Frontend UI & Visual Identity**:
-  - **Theme**: Premium Minimal Dark aesthetic (`#050505` background, `#0d0d0d` cards, `#242424` borders, high-contrast typography).
-  - **Primary Action Buttons**: Clean white background with black text (`bg-white text-black font-semibold`).
-  - **Secondary Action Buttons**: Dark background with subtle gray border (`bg-[#0d0d0d] text-white border border-[#242424]`).
-  - **Protected Routes**: Navigation guards redirecting unauthenticated users to `/login`.
-  - Responsive Top Navbar, Sidebar navigation, and Modal dialogs.
+Stage 3 layer providing Social Media Connections UI, Provider Adaptor OAuth Architecture (Instagram, LinkedIn, X/Twitter), AES-256 Token Encryption, CSRF State Security, Versioned API Endpoints, and Database persistence with Alembic migrations.
 
 ---
 
-## Technical Architecture
+## Features Implemented
 
-### Backend Stack
-- **Language & Engine**: Python 3.12 + FastAPI
-- **Database**: PostgreSQL
-- **ORM & Models**: SQLAlchemy 2.0 (UUID primary keys, explicit relationships, foreign key constraints)
-- **Database Migrations**: Alembic
-- **Password Security**: Passlib with Bcrypt
-- **Session Tokens**: PyJWT (`HS256`)
-- **Validation**: Pydantic v2 schemas
-- **Testing**: Pytest & FastAPI TestClient
+### Stage 1: Auth & Workspace Foundation
+- **Authentication & User Management**: Registration (`POST /api/v1/auth/register`), Login (`POST /api/v1/auth/login`), Session validation (`GET /api/v1/auth/me`), Logout (`POST /api/v1/auth/logout`), Password Visibility Toggle.
+- **Workspace Management**: Auto-provisioning, Custom workspace creation (`POST /api/v1/workspaces`), Active workspace switching (`GET /api/v1/workspaces/current`), Workspace deletion with danger modal and permissions checks (`DELETE /api/v1/workspaces/{id}`).
 
-### Frontend Stack
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS (Minimal dark mode configuration)
-- **Icons**: Lucide React icons
-- **HTTP Client**: Axios with request interceptors for JWT bearer authentication
+### Stage 2: AI Brand Profile Engine
+- **Brand Profile Store**: Workspace brand profile schema (`brand_profiles` table).
+- **AI Brand Brain Context Generator**: Generates formatted context prompt injections from workspace brand parameters.
+
+### Stage 3: Social Connections & OAuth Architecture
+- **Social Connections UI (`/connections`)**:
+  - Workspace-scoped Connections page in dashboard.
+  - Interactive platform cards for **Instagram**, **LinkedIn**, and **X (Twitter)**.
+  - Live **Connected / Not Connected** status badges.
+  - Account name / handle display (`@username` or Account Name).
+  - Actions for **Connect**, **Reconnect**, and **Disconnect**.
+  - Interactive OAuth Setup & Configuration modal when credentials are unconfigured.
+  - Loading skeletons, success & error toast notifications upon OAuth callback return.
+- **Clean Provider / Adaptor Architecture (`SocialProvider`)**:
+  - Abstract base class `SocialProvider` (`backend/app/services/social_providers/base.py`).
+  - Isolated provider implementations: `InstagramProvider`, `LinkedInProvider`, `XProvider`.
+  - Factory helper `get_social_provider(provider_name)` with validation and credential check (`is_configured()`).
+- **AES-256 Fernet Token Encryption**:
+  - `encrypt_token` and `decrypt_token` security functions in `backend/app/core/security.py`.
+  - OAuth access tokens and refresh tokens are encrypted before saving to PostgreSQL/SQLite database.
+  - Security boundary: Encrypted tokens are **never** exposed to the frontend or API response schemas.
+- **CSRF State Security**:
+  - Cryptographically signed state token with 10-minute expiration containing `workspace_id`, `user_id`, `provider`, and random nonce.
+  - Prevents OAuth CSRF attacks and enforces workspace authorization.
 
 ---
 
-## API Endpoints (`/api/v1`)
+## Required Environment Variables
+
+Add the following variables to `backend/.env`:
+
+```env
+# Stage 1 & 2 Core Settings
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/social_media_db
+SECRET_KEY=09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+FRONTEND_URL=http://localhost:3000
+
+# Stage 3 Security & OAuth Settings
+ENCRYPTION_KEY=your_optional_32_byte_base64_fernet_key
+OAUTH_REDIRECT_BASE_URL=http://localhost:8000/api/v1/social-connections
+
+# Instagram OAuth (Meta for Developers)
+INSTAGRAM_CLIENT_ID=your_instagram_client_id
+INSTAGRAM_CLIENT_SECRET=your_instagram_client_secret
+
+# LinkedIn OAuth (LinkedIn Developer Portal)
+LINKEDIN_CLIENT_ID=your_linkedin_client_id
+LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+
+# X / Twitter OAuth (X Developer Portal - OAuth 2.0 PKCE)
+X_CLIENT_ID=your_x_client_id
+X_CLIENT_SECRET=your_x_client_secret
+```
+
+---
+
+## OAuth Provider Configuration & Callback URLs
+
+Configure your developer portal applications with the exact local redirect callback URLs below:
+
+| Provider | Developer Portal | Local Callback URL | Required Scopes |
+| :--- | :--- | :--- | :--- |
+| **Instagram** | [Meta Developer Portal](https://developers.facebook.com/) | `http://localhost:8000/api/v1/social-connections/instagram/callback` | `user_profile,user_media` |
+| **LinkedIn** | [LinkedIn Developer Portal](https://www.linkedin.com/developers/) | `http://localhost:8000/api/v1/social-connections/linkedin/callback` | `openid,profile,email` |
+| **X (Twitter)** | [X Developer Portal](https://developer.x.com/) | `http://localhost:8000/api/v1/social-connections/x/callback` | `tweet.read,users.read,tweet.write,offline.access` |
+
+### Provider Setup Steps
+1. **Instagram / Meta**:
+   - Register a Meta Developer app under "Business" type.
+   - Add Instagram Graph API / Instagram Basic Display product.
+   - Add `http://localhost:8000/api/v1/social-connections/instagram/callback` to Valid OAuth Redirect URIs.
+   - Copy App ID and App Secret into `INSTAGRAM_CLIENT_ID` and `INSTAGRAM_CLIENT_SECRET`.
+
+2. **LinkedIn**:
+   - Create an app in LinkedIn Developer Portal.
+   - Under Auth settings, add `http://localhost:8000/api/v1/social-connections/linkedin/callback` to Authorized redirect URLs.
+   - Request `Sign In with LinkedIn using OpenID Connect` permissions.
+   - Copy Client ID and Client Secret into `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`.
+
+3. **X (Twitter)**:
+   - Create a project & app in X Developer Portal.
+   - Set App permissions to `Read and Write`.
+   - Set Type of App to `Web App, Automated App or Bot` (OAuth 2.0).
+   - Add `http://localhost:8000/api/v1/social-connections/x/callback` under Callback URLs.
+   - Copy Client ID and Client Secret into `X_CLIENT_ID` and `X_CLIENT_SECRET`.
+
+---
+
+## API Endpoints (`/api/v1/social-connections`)
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :---: |
-| `POST` | `/api/v1/auth/register` | Register new user & auto-create default workspace | No |
-| `POST` | `/api/v1/auth/login` | Authenticate user & return JWT token | No |
-| `POST` | `/api/v1/auth/logout` | Invalidate user session | Yes |
-| `GET` | `/api/v1/auth/me` | Fetch current authenticated user profile | Yes |
-| `GET` | `/api/v1/workspaces` | List all workspaces accessible by current user | Yes |
-| `POST` | `/api/v1/workspaces` | Create a new workspace for current user | Yes |
-| `GET` | `/api/v1/workspaces/current` | Get current active workspace details | Yes |
-| `PATCH` | `/api/v1/workspaces/{id}` | Update workspace settings (Owner/Admin) | Yes |
-| `DELETE` | `/api/v1/workspaces/{id}` | Permanently delete workspace & members (Owner/Admin) | Yes |
+| `GET` | `/api/v1/social-connections` | List connection status & accounts for active workspace | Yes |
+| `GET` | `/api/v1/social-connections/{provider}/connect` | Initiate OAuth flow (returns auth URL & signed CSRF state) | Yes |
+| `GET` | `/api/v1/social-connections/{provider}/callback` | Process OAuth callback code, exchange & encrypt tokens, save connection | No (Valid State Required) |
+| `DELETE` | `/api/v1/social-connections/{provider}` | Disconnect social media account for active workspace | Yes |
 
 ---
 
-## Project Structure
+## Testing Social Connections
 
-```text
-Social Media Automation/
-├── backend/
-│   ├── alembic/              # Database migration scripts & environment
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── deps.py       # Auth dependencies (get_current_user)
-│   │   │   └── v1/
-│   │   │       ├── router.py # API v1 router
-│   │   │       └── endpoints/
-│   │   │           ├── auth.py       # Login, Register, Logout, Me
-│   │   │           └── workspaces.py # Workspace CRUD routes
-│   │   ├── core/
-│   │   │   ├── config.py    # Environment settings
-│   │   │   ├── database.py  # SQLAlchemy engine & session maker
-│   │   │   └── security.py  # Password hashing & JWT token logic
-│   │   ├── models/
-│   │   │   ├── user.py             # User DB model
-│   │   │   ├── workspace.py        # Workspace DB model
-│   │   │   └── workspace_member.py # Workspace Member DB model
-│   │   ├── schemas/         # Pydantic validation schemas
-│   │   ├── services/        # Business logic layer
-│   │   └── main.py          # FastAPI application entrypoint
-│   ├── tests/               # Pytest integration & unit test suite
-│   ├── alembic.ini          # Alembic configuration
-│   └── requirements.txt     # Python dependencies
-└── frontend/
-    ├── src/
-    │   ├── app/
-    │   │   ├── (auth)/
-    │   │   │   ├── login/      # Login page
-    │   │   │   └── register/   # Register page
-    │   │   ├── (dashboard)/
-    │   │   │   └── dashboard/  # Protected dashboard page
-    │   │   ├── globals.css     # Dark mode CSS & scrollbars
-    │   │   └── layout.tsx      # Root layout & AuthProvider wrapper
-    │   ├── components/
-    │   │   ├── layout/         # Navbar & Sidebar components
-    │   │   ├── ui/             # Button, Card, Input, Badge, Spinner
-    │   │   └── workspace/      # Create & Delete Workspace Modals
-    │   ├── lib/
-    │   │   ├── api.ts          # Axios API instance
-    │   │   └── auth.tsx        # React AuthContext & AuthProvider
-    │   └── types/              # TypeScript interface definitions
-    ├── tailwind.config.ts      # Dark theme configuration
-    └── package.json            # Node.js dependencies & scripts
-```
-
----
-
-## Local Setup & Quickstart
-
-### 1. Prerequisites
-- Python 3.12+
-- Node.js 18+ & npm
-- PostgreSQL database server running on `localhost:5432`
-
-### 2. Backend Setup
+### 1. Run Backend Test Suite
+Run the full pytest suite (includes auth, workspace, brand profile, and social connection security tests):
 ```bash
 cd backend
-python -m pip install -r requirements.txt
+..\.venv\Scripts\python -m pytest -v
 ```
+All 33 tests should pass cleanly!
 
-### 3. Environment & Database Configuration
-Create a `.env` file inside `/backend`:
-```env
-DATABASE_URL=postgresql://YOUR_POSTGRES_USER:YOUR_POSTGRES_PASSWORD@localhost:5432/social_media_db
-SECRET_KEY=YOUR_SECURE_RANDOM_SECRET_KEY
-```
-
-Run database migrations with Alembic:
+### 2. Verify Database Migrations
+Apply Alembic migrations to upgrade database schema to `003_social_connections`:
 ```bash
-python -m alembic upgrade head
+cd backend
+..\.venv\Scripts\python -m alembic upgrade head
 ```
 
-### 4. Run Backend Server
-```bash
-python -m uvicorn app.main:app --reload --port 8000
-```
-Interactive OpenAPI documentation available at: `http://localhost:8000/api/v1/docs`
-
-### 5. Run Backend Tests
-```bash
-python -m pytest -v
-```
-
-### 6. Frontend Setup & Run
+### 3. Verify Frontend Build
+Run Next.js build verification:
 ```bash
 cd frontend
-npm install
-npm run dev
+npm run build
 ```
-Open `http://localhost:3000` in your browser.
 
----
-
-## End-to-End Verification Flow
-
-1. Open `http://localhost:3000` -> Automatically redirects to `/login`.
-2. Click **Create Workspace Account** -> Navigates to `/register`.
-3. Test Password Visibility: Click Eye icon in password inputs to toggle text visibility.
-4. Register a user -> Account & initial workspace auto-created -> Redirected to `/dashboard`.
-5. Dashboard loads active workspace details in Premium Minimal Dark theme.
-6. Click **Create Workspace** -> Fill in new workspace details -> Adds new workspace.
-7. Click workspace dropdown in Navbar -> Switch active workspace.
-8. Click **Delete Workspace** -> Confirm in modal -> Workspace & members deleted, UI updates to remaining workspace.
-9. Click **Logout** -> Session cleared and returned to `/login`.
-
+### 4. Interactive Testing in Browser
+1. Start backend: `python -m uvicorn app.main:app --reload --port 8000`
+2. Start frontend: `npm run dev` in `/frontend`
+3. Navigate to `http://localhost:3000/connections`.
+4. If provider credentials are not configured, click **Connect** on any card to view the **OAuth Setup Guide** modal.
+5. With configured credentials, click **Connect** to perform live OAuth authorization. Upon return, a success toast appears and the card updates to **Connected** showing account details and **Reconnect** / **Disconnect** buttons.

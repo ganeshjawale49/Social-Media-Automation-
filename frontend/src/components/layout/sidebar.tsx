@@ -21,10 +21,10 @@ export const Sidebar: React.FC = () => {
   const activeNavItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Brand Profile", href: "/brand-profile", icon: Building },
+    { name: "Social Connections", href: "/connections", icon: Share2 },
   ];
 
   const futureNavItems = [
-    { name: "Social Connections", icon: Share2 },
     { name: "Content Studio", icon: PenTool },
     { name: "Publishing", icon: Send },
     { name: "Analytics", icon: BarChart3 },
@@ -64,10 +64,10 @@ export const Sidebar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Stage 3+ Modules (Disabled Placeholders) */}
+        {/* Stage 4+ Modules (Disabled Placeholders) */}
         <div>
           <p className="px-3 text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-            <span>Stage 3+ Modules</span>
+            <span>Stage 4+ Modules</span>
             <Lock className="w-3 h-3 text-neutral-500" />
           </p>
           <div className="space-y-1.5 opacity-70">
@@ -83,7 +83,7 @@ export const Sidebar: React.FC = () => {
                     <span>{item.name}</span>
                   </div>
                   <Badge variant="gray" className="text-[10px] py-0 px-1.5 font-medium">
-                    Stage 3+
+                    Stage 4+
                   </Badge>
                 </div>
               );
@@ -97,16 +97,17 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center justify-between">
           <span className="font-semibold text-white flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Stage 2 Active
+            Stage 3 Active
           </span>
           <Badge variant="green" className="text-[9px] py-0 px-1 font-semibold">
             READY
           </Badge>
         </div>
         <p className="text-[11px] text-neutral-400 leading-relaxed">
-          Brand Profile & AI Brand Brain context enabled.
+          OAuth & Social Media Connections Enabled.
         </p>
       </div>
     </aside>
   );
+
 };
